@@ -133,8 +133,8 @@ function App() {
     }
   }
 
-  const errorVista = errorEquipos ?? (vista === 'prestamos' ? errorPrestamos : null)
-  const cargandoVista = cargandoEquipos || (vista === 'prestamos' && cargandoPrestamos)
+  const errorVista = errorEquipos ?? errorPrestamos
+  const cargandoVista = cargandoEquipos || cargandoPrestamos
 
   return (
     <div className="app-shell">
@@ -191,7 +191,7 @@ function App() {
                 type="button"
                 onClick={() => {
                   if (errorEquipos) reintentarEquipos()
-                  if (vista === 'prestamos' && errorPrestamos) {
+                  if (errorPrestamos) {
                     setCargandoPrestamos(true)
                     setErrorPrestamos(null)
                     setIntentoPrestamos((actual) => actual + 1)
