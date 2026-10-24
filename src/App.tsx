@@ -1,45 +1,65 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Encabezado } from './components/Encabezado'
 import { FormularioPrestamo } from './components/FormularioPrestamo'
 import { ListaEquipos } from './components/ListaEquipos'
 import { TablaPrestamos } from './components/TablaPrestamos'
-import type { Equipo, Prestamo } from './types'
+import { useEquipos } from './hooks/useEquipos'
+import {
+  devolverPrestamoConEquipo,
+  obtenerPrestamosActivos,
+  registrarPrestamoConEquipo,
+} from './services/api'
+import type { Equipo, NuevoPrestamo, Prestamo } from './types'
 
-const equiposIniciales: Equipo[] = [
-  { id: 101, nombre: 'Laptop Dell Latitude', categoria: 'Laptop', disponible: false },
-  { id: 102, nombre: 'Laptop Lenovo ThinkPad', categoria: 'Laptop', disponible: true },
-  { id: 103, nombre: 'Laptop HP ProBook', categoria: 'Laptop', disponible: true },
-  { id: 201, nombre: 'Proyector Epson', categoria: 'Proyector', disponible: true },
-  { id: 202, nombre: 'Proyector BenQ', categoria: 'Proyector', disponible: true },
-  { id: 203, nombre: 'Proyector ViewSonic', categoria: 'Proyector', disponible: true },
-  { id: 301, nombre: 'Router TP-Link Archer', categoria: 'Router', disponible: true },
-  { id: 302, nombre: 'Router MikroTik hAP', categoria: 'Router', disponible: true },
-  { id: 303, nombre: 'Router Cisco RV', categoria: 'Router', disponible: true },
-]
-
-const prestamosIniciales: Prestamo[] = [
-  {
-    id: 1,
-    equipoId: 101,
-    solicitante: 'Usuario de demostración',
-    carne: '1111-11-11111',
-    fechaPrestamo: '2026-10-18T16:00:00.000Z',
-    fechaLimite: '2026-10-20T23:59:59.000Z',
-    devuelto: false,
-  },
-]
+const TITULO_APLICACION = 'Préstamos Lab — 0902-23-2280'
 
 type Vista = 'inventario' | 'prestamos'
 
 function App() {
-  const [equipos, setEquipos] = useState(equiposIniciales)
-  const [prestamos, setPrestamos] = useState(prestamosIniciales)
+  const {
+    equipos,
+    cargando: cargandoEquipos,
+    error: errorEquipos,
+    reintentar: reintentarEquipos,
+    actualizarDisponibilidad,
+  } = useEquipos()
+  const [prestamos, setPrestamos] = useState<Prestamo[]>([])
+  const [cargandoPrestamos, setCargandoPrestamos] = useState(true)
+  const [errorPrestamos, setErrorPrestamos] = useState<string | null>(null)
+  const [intentoPrestamos, setIntentoPrestamos] = useState(0)
+  const [errorAccion, setErrorAccion] = useState<string | null>(null)
   const [vista, setVista] = useState<Vista>('inventario')
   const [categoria, setCategoria] = useState('Todas')
   const [busqueda, setBusqueda] = useState('')
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<Equipo | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [devolviendoId, setDevolviendoId] = useState<number | null>(null)
+
+  useEffect(() => {
+    document.title = TITULO_APLICACION
+  }, [])
+
+  useEffect(() => {
+    let activo = true
+    obtenerPrestamosActivos()
+      .then((datos) => {
+        if (activo) setPrestamos(datos)
+      })
+      .catch((error: unknown) => {
+        if (activo) {
+          setErrorPrestamos(
+            error instanceof Error ? error.message : 'No se pudieron cargar los préstamos.',
+          )
+        }
+      })
+      .finally(() => {
+        if (activo) setCargandoPrestamos(false)
+      })
+
+    return () => {
+      activo = false
+    }
+  }, [intentoPrestamos])
 
   const categorias = useMemo(
     () => [...new Set(equipos.map((equipo) => equipo.categoria))].sort(),
@@ -53,11 +73,14 @@ function App() {
       return coincideCategoria && coincideNombre
     })
   }, [busqueda, categoria, equipos])
-  const prestamosActivos = prestamos.filter((prestamo) => !prestamo.devuelto)
+  const prestamosActivos = useMemo(
+    () => prestamos.filter((prestamo) => !prestamo.devuelto),
+    [prestamos],
+  )
 
   function abrirFormulario(id: number) {
     const equipo = equipos.find((item) => item.id === id)
-    if (equipo) setEquipoSeleccionado(equipo)
+    if (equipo?.disponible) setEquipoSeleccionado(equipo)
   }
 
   async function guardarPrestamo(datos: {
@@ -67,9 +90,9 @@ function App() {
   }) {
     if (!equipoSeleccionado) return
     setGuardando(true)
+    setErrorAccion(null)
     try {
-      const nuevoPrestamo: Prestamo = {
-        id: Math.max(0, ...prestamos.map((prestamo) => prestamo.id)) + 1,
+      const nuevoPrestamo: NuevoPrestamo = {
         equipoId: equipoSeleccionado.id,
         solicitante: datos.solicitante,
         carne: datos.carne,
@@ -77,32 +100,41 @@ function App() {
         fechaLimite: new Date(`${datos.fechaLimite}T23:59:59`).toISOString(),
         devuelto: false,
       }
-      setPrestamos((actuales) => [...actuales, nuevoPrestamo])
-      setEquipos((actuales) =>
-        actuales.map((equipo) =>
-          equipo.id === equipoSeleccionado.id ? { ...equipo, disponible: false } : equipo,
-        ),
+      const prestamoGuardado = await registrarPrestamoConEquipo(
+        equipoSeleccionado.id,
+        nuevoPrestamo,
       )
+      setPrestamos((actuales) => [...actuales, prestamoGuardado])
+      actualizarDisponibilidad(equipoSeleccionado.id, false)
       setEquipoSeleccionado(null)
     } finally {
       setGuardando(false)
     }
   }
 
-  function devolverPrestamo(prestamo: Prestamo) {
+  async function devolverPrestamo(prestamo: Prestamo) {
     setDevolviendoId(prestamo.id)
-    setPrestamos((actuales) =>
-      actuales.map((item) =>
-        item.id === prestamo.id ? { ...item, devuelto: true } : item,
-      ),
-    )
-    setEquipos((actuales) =>
-      actuales.map((equipo) =>
-        equipo.id === prestamo.equipoId ? { ...equipo, disponible: true } : equipo,
-      ),
-    )
-    setDevolviendoId(null)
+    setErrorAccion(null)
+    try {
+      const prestamoDevuelto = await devolverPrestamoConEquipo(
+        prestamo.id,
+        prestamo.equipoId,
+      )
+      setPrestamos((actuales) =>
+        actuales.map((item) => item.id === prestamo.id ? prestamoDevuelto : item),
+      )
+      actualizarDisponibilidad(prestamo.equipoId, true)
+    } catch (error) {
+      setErrorAccion(
+        error instanceof Error ? error.message : 'No se pudo registrar la devolución.',
+      )
+    } finally {
+      setDevolviendoId(null)
+    }
   }
+
+  const errorVista = errorEquipos ?? (vista === 'prestamos' ? errorPrestamos : null)
+  const cargandoVista = cargandoEquipos || (vista === 'prestamos' && cargandoPrestamos)
 
   return (
     <div className="app-shell">
@@ -143,7 +175,34 @@ function App() {
           </button>
         </nav>
 
-        {vista === 'inventario' ? (
+        {cargandoVista ? (
+          <div className="loading-panel" role="status">
+            <span className="loading-spinner" />
+            Cargando información del laboratorio…
+          </div>
+        ) : errorVista ? (
+          <div className="error-panel" role="alert">
+            <span className="error-panel__icon" aria-hidden="true">!</span>
+            <div>
+              <h2>No se pudo cargar la información</h2>
+              <p>{errorVista}</p>
+              <button
+                className="button button--primary"
+                type="button"
+                onClick={() => {
+                  if (errorEquipos) reintentarEquipos()
+                  if (vista === 'prestamos' && errorPrestamos) {
+                    setCargandoPrestamos(true)
+                    setErrorPrestamos(null)
+                    setIntentoPrestamos((actual) => actual + 1)
+                  }
+                }}
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        ) : vista === 'inventario' ? (
           <section aria-label="Inventario de equipos">
             <div className="inventory-toolbar">
               <label className="search-box" htmlFor="buscar-equipo">
@@ -185,6 +244,7 @@ function App() {
               </div>
               <span>{prestamosActivos.length} préstamos activos</span>
             </div>
+            {errorAccion && <p className="action-error" role="alert">{errorAccion}</p>}
             <TablaPrestamos
               prestamos={prestamosActivos}
               equipos={equipos}

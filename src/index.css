@@ -1,7 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
 :root {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
   color: #1c2825;
   background: #f6f8f6;
   font-synthesis: none;
@@ -85,7 +83,7 @@ a {
   border-radius: 11px;
   background: var(--green);
   color: white;
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
   font-weight: 800;
 }
 
@@ -789,6 +787,75 @@ a {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   clip-path: inset(50%);
+}
+
+.loading-panel,
+.error-panel {
+  display: flex;
+  min-height: 255px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 26px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: #66736c;
+  font-size: 13px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #dce9e0;
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 750ms linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-panel {
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 28px;
+}
+
+.error-panel__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #fae9e6;
+  color: #b34d43;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.error-panel h2 {
+  margin: 0 0 5px;
+  color: #293630;
+  font-size: 15px;
+}
+
+.error-panel p {
+  margin: 0 0 14px;
+  color: #79847f;
+  font-size: 12px;
+}
+
+.action-error {
+  margin: 12px 0;
+  padding: 11px 13px;
+  border: 1px solid #f0d2cd;
+  border-radius: 6px;
+  background: #fff5f3;
+  color: #a8433a;
+  font-size: 11px;
 }
 
 @media (max-width: 760px) {

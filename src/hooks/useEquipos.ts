@@ -18,9 +18,6 @@ export function useEquipos(): EstadoEquipos {
 
   useEffect(() => {
     let activo = true
-    setCargando(true)
-    setError(null)
-
     obtenerEquipos()
       .then((datos) => {
         if (activo) setEquipos(datos)
@@ -42,6 +39,8 @@ export function useEquipos(): EstadoEquipos {
   }, [intento])
 
   const reintentar = useCallback(() => {
+    setCargando(true)
+    setError(null)
     setIntento((actual) => actual + 1)
   }, [])
 

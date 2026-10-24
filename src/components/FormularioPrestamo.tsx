@@ -43,10 +43,12 @@ export function FormularioPrestamo({
   })
   const [errores, setErrores] = useState<ErroresFormulario>({})
   const [errorEnvio, setErrorEnvio] = useState('')
-  const hoy = fechaLocal(new Date())
-  const maximo = new Date()
-  maximo.setDate(maximo.getDate() + 3)
-  const fechaMaxima = fechaLocal(maximo)
+  const [{ hoy, fechaMaxima }] = useState(() => {
+    const ahora = new Date()
+    const maximo = new Date(ahora)
+    maximo.setDate(maximo.getDate() + 3)
+    return { hoy: fechaLocal(ahora), fechaMaxima: fechaLocal(maximo) }
+  })
 
   function cambiarCampo(campo: CampoFormulario, valor: string) {
     setDatos((actuales) => ({ ...actuales, [campo]: valor }))

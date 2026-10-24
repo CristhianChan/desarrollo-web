@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Equipo, Prestamo } from '../types'
 
 interface TablaPrestamosProps {
@@ -21,6 +22,8 @@ export function TablaPrestamos({
   devolviendoId,
   onDevolver,
 }: TablaPrestamosProps) {
+  const [ahora] = useState(() => Date.now())
+
   if (prestamos.length === 0) {
     return (
       <div className="empty-state">
@@ -45,7 +48,7 @@ export function TablaPrestamos({
         </thead>
         <tbody>
           {prestamos.map((prestamo) => {
-            const vencido = Date.parse(prestamo.fechaLimite) < Date.now()
+            const vencido = Date.parse(prestamo.fechaLimite) < ahora
             const equipo = equipos.find((item) => item.id === prestamo.equipoId)
 
             return (
