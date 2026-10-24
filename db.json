@@ -1,0 +1,24 @@
+{
+  "equipos": [
+    { "id": 101, "nombre": "Laptop Dell Latitude", "categoria": "Laptop", "disponible": false },
+    { "id": 102, "nombre": "Laptop Lenovo ThinkPad", "categoria": "Laptop", "disponible": true },
+    { "id": 103, "nombre": "Laptop HP ProBook", "categoria": "Laptop", "disponible": true },
+    { "id": 201, "nombre": "Proyector Epson", "categoria": "Proyector", "disponible": true },
+    { "id": 202, "nombre": "Proyector BenQ", "categoria": "Proyector", "disponible": true },
+    { "id": 203, "nombre": "Proyector ViewSonic", "categoria": "Proyector", "disponible": true },
+    { "id": 301, "nombre": "Router TP-Link Archer", "categoria": "Router", "disponible": true },
+    { "id": 302, "nombre": "Router MikroTik hAP", "categoria": "Router", "disponible": true },
+    { "id": 303, "nombre": "Router Cisco RV", "categoria": "Router", "disponible": true }
+  ],
+  "prestamos": [
+    {
+      "id": 1,
+      "equipoId": 101,
+      "solicitante": "Usuario de demostración",
+      "carne": "1111-11-11111",
+      "fechaPrestamo": "2026-10-18T16:00:00.000Z",
+      "fechaLimite": "2026-10-20T23:59:59.000Z",
+      "devuelto": false
+    }
+  ]
+}
